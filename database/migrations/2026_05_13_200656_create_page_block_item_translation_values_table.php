@@ -6,20 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('page_block_item_translation_values', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('block_item_id')->constrained('page_block_items')->cascadeOnDelete();
+            $table->string('locale', 12)->index();
+            $table->string('field_key');
+            $table->text('value')->nullable();
             $table->timestamps();
+
+            $table->unique(['block_item_id', 'locale', 'field_key']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('page_block_item_translation_values');

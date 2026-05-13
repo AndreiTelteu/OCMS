@@ -4,17 +4,24 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\View;
+use App\Services\Cms\LocalizedUrlGenerator;
 use Symfony\Component\HttpFoundation\Response;
 
 class ShareSeoContext
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
+    public function __construct(private readonly LocalizedUrlGenerator $urls)
+    {
+    }
+
     public function handle(Request $request, Closure $next): Response
     {
+        View::share('seo', [
+            'locale' => app()->getLocale(),
+            'canonical' => $this->urls->canonicalForCurrentRoute(),
+            'alternates' => $this->urls->alternatesForCurrentRoute(),
+        ]);
+
         return $next($request);
     }
 }

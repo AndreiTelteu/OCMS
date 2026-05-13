@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use App\Models\Page;
 
 class HomeController extends Controller
 {
-    /**
-     * Handle the incoming request.
-     */
-    public function __invoke(Request $request)
+    public function __invoke()
     {
-        //
+        $page = Page::query()->where('is_home', true)->where('status', 'published')->first();
+
+        return view('cms.home', [
+            'page' => $page,
+        ]);
     }
 }

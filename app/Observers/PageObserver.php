@@ -3,46 +3,28 @@
 namespace App\Observers;
 
 use App\Models\Page;
+use App\Services\Cms\LocalizedRouteRegistry;
 
 class PageObserver
 {
-    /**
-     * Handle the Page "created" event.
-     */
-    public function created(Page $page): void
+    public function __construct(private readonly LocalizedRouteRegistry $routes)
     {
-        //
     }
 
-    /**
-     * Handle the Page "updated" event.
-     */
-    public function updated(Page $page): void
+    public function saved(Page $page): void
     {
-        //
+        if (! $page->isPublished()) {
+            $this->routes->forget($page);
+            return;
+        }
+
+        $this->routes->syncModel($page, function (string $locale) use ($page): ?string {
+            return $page->slugForLocale($locale);
+        }, 'content.root');
     }
 
-    /**
-     * Handle the Page "deleted" event.
-     */
     public function deleted(Page $page): void
     {
-        //
-    }
-
-    /**
-     * Handle the Page "restored" event.
-     */
-    public function restored(Page $page): void
-    {
-        //
-    }
-
-    /**
-     * Handle the Page "force deleted" event.
-     */
-    public function forceDeleted(Page $page): void
-    {
-        //
+        $this->routes->forget($page);
     }
 }

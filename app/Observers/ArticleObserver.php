@@ -3,46 +3,28 @@
 namespace App\Observers;
 
 use App\Models\Article;
+use App\Services\Cms\LocalizedRouteRegistry;
 
 class ArticleObserver
 {
-    /**
-     * Handle the Article "created" event.
-     */
-    public function created(Article $article): void
+    public function __construct(private readonly LocalizedRouteRegistry $routes)
     {
-        //
     }
 
-    /**
-     * Handle the Article "updated" event.
-     */
-    public function updated(Article $article): void
+    public function saved(Article $article): void
     {
-        //
+        if (! $article->isPublished()) {
+            $this->routes->forget($article);
+            return;
+        }
+
+        $this->routes->syncModel($article, function (string $locale) use ($article): ?string {
+            return $article->slugForLocale($locale);
+        }, 'content.root');
     }
 
-    /**
-     * Handle the Article "deleted" event.
-     */
     public function deleted(Article $article): void
     {
-        //
-    }
-
-    /**
-     * Handle the Article "restored" event.
-     */
-    public function restored(Article $article): void
-    {
-        //
-    }
-
-    /**
-     * Handle the Article "force deleted" event.
-     */
-    public function forceDeleted(Article $article): void
-    {
-        //
+        $this->routes->forget($article);
     }
 }

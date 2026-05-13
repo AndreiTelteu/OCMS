@@ -35,9 +35,14 @@ class Page extends Model
     protected function casts(): array
     {
         return [
-            'is_home' => 'bool',
+            'is_home' => 'boolean',
             'published_at' => 'datetime',
         ];
+    }
+
+    public function descriptionForLocale(?string $locale = null): ?string
+    {
+        return $this->seoDescriptionForLocale($locale) ?: $this->bodyForLocale($locale);
     }
 
     public function blocks(): HasMany
