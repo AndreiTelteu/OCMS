@@ -15,6 +15,13 @@
     @endif
 </head>
 <body>
+    @if(!empty($seo['switcher'] ?? []))
+        <nav aria-label="Language switcher">
+            @foreach($seo['switcher'] as $locale => $url)
+                <a href="{{ $url }}" hreflang="{{ $locale }}">{{ strtoupper($locale) }}</a>
+            @endforeach
+        </nav>
+    @endif
     <main>
         <h1>
             {{ method_exists($model, 'titleForLocale') ? $model->titleForLocale() : ($model->nameForLocale() ?? class_basename($model)) }}

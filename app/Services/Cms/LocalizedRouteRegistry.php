@@ -4,6 +4,7 @@ namespace App\Services\Cms;
 
 use App\Models\LocalizedRoute;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class LocalizedRouteRegistry
 {
@@ -24,13 +25,17 @@ class LocalizedRouteRegistry
 
     public function syncModel(Model $routable, callable $pathResolver, ?string $routeName = null): void
     {
-        foreach (config('cms.supported_locales') as $locale) {
-            $path = $pathResolver($locale);
+        DB::transaction(function () use ($pathResolver, $routeName, $routable): void {
+            $this->forget($routable);
 
-            if ($path !== null && $path !== '') {
-                $this->sync($routable, $locale, $path, $routeName);
+            foreach (config('cms.supported_locales') as $locale) {
+                $path = $pathResolver($locale);
+
+                if ($path !== null) {
+                    $this->sync($routable, $locale, $path, $routeName);
+                }
             }
-        }
+        });
     }
 
     public function forget(Model $routable): void

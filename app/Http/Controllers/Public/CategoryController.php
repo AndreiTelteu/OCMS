@@ -15,7 +15,23 @@ class CategoryController extends Controller
 
     public function __invoke(string $path)
     {
-        $category = Category::query()->whereTranslation('path', trim($path, '/'))->firstOrFail();
+        $locale = app()->getLocale();
+        $fallbackLocale = config('cms.fallback_locale');
+        $path = trim($path, '/');
+
+        $category = Category::query()
+            ->where(function ($query) use ($fallbackLocale, $locale, $path): void {
+                $query->whereTranslation('path', $path, $locale);
+
+                if ($locale !== $fallbackLocale) {
+                    $query->orWhere(function ($query) use ($fallbackLocale, $locale, $path): void {
+                        $query->whereDoesntHave('translations', function ($translationQuery) use ($locale): void {
+                            $translationQuery->where('locale', $locale);
+                        })->whereTranslation('path', $path, $fallbackLocale);
+                    });
+                }
+            })
+            ->firstOrFail();
 
         return view('cms.content', [
             'model' => $category,

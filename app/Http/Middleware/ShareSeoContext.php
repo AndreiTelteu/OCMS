@@ -20,6 +20,7 @@ class ShareSeoContext
             'locale' => app()->getLocale(),
             'canonical' => $this->urls->canonicalForCurrentRoute(),
             'alternates' => $this->urls->alternatesForCurrentRoute(),
+            'switcher' => $this->urls->switcherForCurrentRoute(),
         ]);
 
         return $next($request);

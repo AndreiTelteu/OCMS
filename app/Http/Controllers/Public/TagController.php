@@ -15,7 +15,23 @@ class TagController extends Controller
 
     public function __invoke(string $slug)
     {
-        $tag = Tag::query()->whereTranslation('slug', trim($slug, '/'))->firstOrFail();
+        $locale = app()->getLocale();
+        $fallbackLocale = config('cms.fallback_locale');
+        $slug = trim($slug, '/');
+
+        $tag = Tag::query()
+            ->where(function ($query) use ($fallbackLocale, $locale, $slug): void {
+                $query->whereTranslation('slug', $slug, $locale);
+
+                if ($locale !== $fallbackLocale) {
+                    $query->orWhere(function ($query) use ($fallbackLocale, $locale, $slug): void {
+                        $query->whereDoesntHave('translations', function ($translationQuery) use ($locale): void {
+                            $translationQuery->where('locale', $locale);
+                        })->whereTranslation('slug', $slug, $fallbackLocale);
+                    });
+                }
+            })
+            ->firstOrFail();
 
         return view('cms.content', [
             'model' => $tag,

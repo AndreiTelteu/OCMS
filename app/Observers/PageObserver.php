@@ -7,19 +7,18 @@ use App\Services\Cms\LocalizedRouteRegistry;
 
 class PageObserver
 {
-    public function __construct(private readonly LocalizedRouteRegistry $routes)
-    {
-    }
+    public function __construct(private readonly LocalizedRouteRegistry $routes) {}
 
     public function saved(Page $page): void
     {
         if (! $page->isPublished()) {
             $this->routes->forget($page);
+
             return;
         }
 
         $this->routes->syncModel($page, function (string $locale) use ($page): ?string {
-            return $page->slugForLocale($locale);
+            return $page->rootPathForLocale($locale);
         }, 'content.root');
     }
 

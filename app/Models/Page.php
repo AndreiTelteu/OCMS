@@ -5,15 +5,17 @@ namespace App\Models;
 use App\Models\Concerns\HasContentStatus;
 use App\Models\Concerns\HasTranslationFallbacks;
 use Astrotomic\Translatable\Translatable;
+use Database\Factories\PageFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Page extends Model
 {
-    /** @use HasFactory<\Database\Factories\PageFactory> */
-    use HasFactory;
     use HasContentStatus;
+
+    /** @use HasFactory<PageFactory> */
+    use HasFactory;
     use HasTranslationFallbacks;
     use Translatable;
 
@@ -64,6 +66,15 @@ class Page extends Model
     public function slugForLocale(?string $locale = null): ?string
     {
         return $this->translatedValue('slug', $locale);
+    }
+
+    public function rootPathForLocale(?string $locale = null): string
+    {
+        if ($this->is_home) {
+            return '';
+        }
+
+        return trim((string) $this->slugForLocale($locale), '/');
     }
 
     public function seoTitleForLocale(?string $locale = null): ?string
