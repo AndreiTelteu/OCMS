@@ -388,31 +388,53 @@ Pentru entitățile generate din CMS:
 
 ---
 
-## 10. Riscuri și întrebări deschise
+## 10. Decizii fixate
 
-1. **Politica pentru limba implicită**  
-   Trebuie confirmat dacă limba principală are prefix sau nu în producție; asta influențează canonical-urile, sitemap-ul și redirect-urile.
+### 10.1 `main_lang_prefix`
+- `main_lang_prefix` determină dacă limba principală este expusă în URL.
+- Pentru `en` principal și `fr` secundar, un articol public are următoarele variante de rută:
+  - `/article1`
+  - `/en/article1`
+  - `/fr/article1`
+- Regula de redirect este:
+  - dacă `main_lang_prefix = true`, `/article1` → 301 → `/en/article1`
+  - dacă `main_lang_prefix = false`, `/en/article1` → 301 → `/article1`
 
-2. **Regula editorială pentru traduceri lipsă**  
-   Pentru switcher și hreflang trebuie stabilit clar:
-   - ascundem limba indisponibilă;
-   - sau facem fallback la homepage / listing;
-   - sau blocăm publicarea incompletă.
+### 10.2 Conținut publicat fără traduceri
+- Un articol poate fi publicat fără traduceri.
+- Dacă traducerea pentru limba curentă lipsește:
+  - website-ul afișează conținutul din limba principală;
+  - admin-ul afișează conținutul din limba principală;
+  - URL-ul folosește slug-ul din limba principală.
+- Exemplu: articol tradus doar în engleză → varianta franceză este `/fr/slug-en`.
 
-3. **Slug-uri rezervate**  
-   Trebuie menținută o listă explicită de slug-uri/path-uri rezervate pentru rute manuale și segmente traduse, ca să nu intre în conflict cu conținutul root-level.
+### 10.3 Rute manuale
+- Rutele manuale au prioritate peste ruta dinamică `/{slug}`.
+- Nu se introduce logică specială de conflict handling pentru ele.
 
-4. **Categorie cu nesting nelimitat**  
-   Recomand materialized path tradus (`path`) în translation table; trebuie stabilit dacă la mutarea unei categorii recalculăm sincron descendenții imediat sau prin job.
+### 10.4 Categorie nesting
+- Recalcularea path-urilor la mutarea categoriei este sincronă.
+- Nu se folosește job async în v1.
 
-5. **Block builder în Filament**  
-   Necesită componentă custom mai serioasă decât builder-ul standard; este o investiție justificată, dar trebuie planificată ca feature separată, nu ca detaliu de form simplu.
+### 10.5 Block builder
+- Blocurile și conținutul blocurilor nu se traduc în v1.
+- Traducerea blocurilor rămâne pentru o iterație ulterioară.
 
-6. **Cache și eager loading**  
-   Pentru pagini complexe cu multe blocks este recomandat cache per `entity + locale + updated_at`, altfel costul de asamblare poate crește.
+### 10.6 Cache
+- Cache-ul aplicației nu intră în v1 pentru conținutul asamblat.
+- Poate fi adăugat ulterior fără schimbarea modelului de date.
 
-7. **Sitemap și hreflang pentru entități nepublicate în toate limbile**  
-   Trebuie decis dacă includem doar limbile publicate sau și fallback-uri; recomandarea este să includem **doar URL-urile publicabile real**.
+### 10.7 Sitemap
+- Sitemap-ul include URL-urile publicabile reale.
+- Dacă un articol/pagină are fallback pe slug-ul limbii principale, sitemap-ul include fallback-ul respectiv.
+- Exemplu pentru conținut tradus doar în engleză:
+  - `/en/example-blog`
+  - `/fr/example-blog`
 
-8. **Diferența canonical vs switcher trebuie păstrată strict**  
-   Canonical/hreflang folosesc forma SEO-corectă; switcherul folosește forma explicit localizată pentru schimbarea limbii. Amestecarea lor va produce redirect-uri inutile sau semnale SEO greșite.
+### 10.8 Canonical / hreflang / switcher
+- `canonical` și `hreflang` folosesc URL-ul SEO-canonical.
+- `switcher` folosește URL-ul explicit de schimbare limbă.
+- Cele două nu se amestecă.
+- Exemplu:
+  - canonical curent: `/fr/example-blog`
+  - switcher pentru engleză: `/en/example-blog` sau forma canonicală a limbii principale, în funcție de `main_lang_prefix`.
