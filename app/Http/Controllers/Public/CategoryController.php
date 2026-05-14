@@ -20,6 +20,7 @@ class CategoryController extends Controller
         $path = trim($path, '/');
 
         $category = Category::query()
+            ->where('status', 'published')
             ->where(function ($query) use ($fallbackLocale, $locale, $path): void {
                 $query->whereTranslation('path', $path, $locale);
 

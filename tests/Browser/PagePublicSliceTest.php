@@ -26,6 +26,7 @@ it('renders the root page slice with canonical, hreflang, schema, and switcher l
         ->assertSee('About')
         ->assertSee('About page content.')
         ->assertSourceHas('"@type":"WebPage"')
+        ->assertSourceHas('"inLanguage":"en"')
         ->assertAttributeContains('nav[aria-label="Language switcher"] a[hreflang="en"]', 'href', '/en/about')
         ->assertAttributeContains('nav[aria-label="Language switcher"] a[hreflang="ro"]', 'href', '/ro/despre');
 
@@ -59,6 +60,7 @@ it('renders the translated secondary-locale root page route', function (): void 
         ->assertSourceHas('<html lang="ro">')
         ->assertSee('Despre')
         ->assertSee('Continut pagina despre.')
+        ->assertSourceHas('"inLanguage":"ro"')
         ->assertAttributeContains('nav[aria-label="Language switcher"] a[hreflang="en"]', 'href', '/en/about')
         ->assertAttributeContains('nav[aria-label="Language switcher"] a[hreflang="ro"]', 'href', '/ro/despre');
 
@@ -135,7 +137,8 @@ it('renders the published home page slice on the localized home routes', functio
     $home
         ->assertAttribute('link[rel="canonical"]', 'href', $origin)
         ->assertAttribute('link[rel="alternate"][hreflang="ro"]', 'href', "{$origin}/ro")
-        ->assertSourceHas('"@type":"WebPage"');
+        ->assertSourceHas('"@type":"WebPage"')
+        ->assertSourceHas('"inLanguage":"en"');
 
     visit('/ro')
         ->assertTitle('Acasa')

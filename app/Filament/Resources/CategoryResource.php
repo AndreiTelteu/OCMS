@@ -2,18 +2,15 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\PageResource\Pages\CreatePage;
-use App\Filament\Resources\PageResource\Pages\EditPage;
-use App\Filament\Resources\PageResource\Pages\ListPages;
-use App\Models\Page;
-use App\Models\PageTranslation;
-use App\Rules\ValidRootContentSlug;
-use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\MarkdownEditor;
+use App\Filament\Resources\CategoryResource\Pages\CreateCategory;
+use App\Filament\Resources\CategoryResource\Pages\EditCategory;
+use App\Filament\Resources\CategoryResource\Pages\ListCategories;
+use App\Models\Category;
+use App\Models\CategoryTranslation;
+use App\Services\Cms\CategoryPathSynchronizer;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
@@ -22,21 +19,19 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
-use Illuminate\Validation\Rule;
 use UnitEnum;
 
-class PageResource extends Resource
+class CategoryResource extends Resource
 {
-    protected static ?string $model = Page::class;
+    protected static ?string $model = Category::class;
 
-    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+    protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-folder';
 
     protected static string|UnitEnum|null $navigationGroup = 'CMS';
 
@@ -46,7 +41,7 @@ class PageResource extends Resource
     {
         return $schema
             ->components([
-                Section::make('Page')
+                Section::make('Category')
                     ->schema([
                         Select::make('status')
                             ->options([
@@ -55,18 +50,21 @@ class PageResource extends Resource
                             ])
                             ->required()
                             ->default('draft'),
-                        TextInput::make('template')
-                            ->maxLength(255),
-                        Toggle::make('is_home')
-                            ->inline(false)
-                            ->default(false),
-                        DateTimePicker::make('published_at'),
+                        Select::make('parent_id')
+                            ->label('Parent category')
+                            ->options(fn (?Category $record): array => static::parentOptions($record))
+                            ->searchable()
+                            ->preload(),
+                        TextInput::make('sort_order')
+                            ->numeric()
+                            ->default(0)
+                            ->required(),
                     ])
                     ->columns(2),
                 Tabs::make('Translations')
                     ->tabs(static::translationTabs())
                     ->columnSpanFull()
-                    ->persistTabInQueryString('page-locale'),
+                    ->persistTabInQueryString('category-locale'),
             ])
             ->columns(1);
     }
@@ -75,31 +73,29 @@ class PageResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('title')
-                    ->label('Title')
-                    ->state(fn (Page $record): string => $record->titleForLocale(config('cms.fallback_locale')) ?? 'Untitled')
+                TextColumn::make('name')
+                    ->label('Name')
+                    ->state(fn (Category $record): string => $record->nameForLocale(config('cms.fallback_locale')) ?? 'Untitled')
                     ->searchable(query: function (Builder $query, string $search): Builder {
                         return $query->whereHas('translations', function (Builder $query) use ($search): void {
-                            $query->where('title', 'like', "%{$search}%");
+                            $query->where('name', 'like', "%{$search}%");
                         });
                     }),
+                TextColumn::make('parent_name')
+                    ->label('Parent')
+                    ->state(fn (Category $record): ?string => $record->parent?->nameForLocale(config('cms.fallback_locale')))
+                    ->placeholder('Root')
+                    ->toggleable(),
                 TextColumn::make('status')
                     ->badge(),
-                IconColumn::make('is_home')
-                    ->label('Home')
-                    ->boolean(),
-                TextColumn::make('template')
-                    ->placeholder('Default')
-                    ->toggleable(),
-                TextColumn::make('published_at')
-                    ->dateTime()
+                TextColumn::make('sort_order')
                     ->sortable(),
                 TextColumn::make('updated_at')
                     ->since()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
-            ->defaultSort('updated_at', 'desc')
+            ->defaultSort('sort_order', 'asc')
             ->actions([
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
@@ -117,24 +113,24 @@ class PageResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ListPages::route('/'),
-            'create' => CreatePage::route('/create'),
-            'edit' => EditPage::route('/{record}/edit'),
+            'index' => ListCategories::route('/'),
+            'create' => CreateCategory::route('/create'),
+            'edit' => EditCategory::route('/{record}/edit'),
         ];
     }
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->with('translations');
+        return parent::getEloquentQuery()->with(['translations', 'parent.translations']);
     }
 
     public static function getRecordTitle(?Model $record): ?string
     {
-        if (! $record instanceof Page) {
+        if (! $record instanceof Category) {
             return parent::getRecordTitle($record);
         }
 
-        return $record->titleForLocale(config('cms.fallback_locale')) ?? parent::getRecordTitle($record);
+        return $record->nameForLocale(config('cms.fallback_locale')) ?? parent::getRecordTitle($record);
     }
 
     /**
@@ -145,16 +141,15 @@ class PageResource extends Resource
         return [
             'attributes' => Arr::only($data, [
                 'status',
-                'template',
-                'is_home',
-                'published_at',
+                'parent_id',
+                'sort_order',
             ]),
             'translations' => collect(config('cms.supported_locales'))
                 ->mapWithKeys(function (string $locale) use ($data): array {
                     $translation = Arr::only((array) data_get($data, "translations.{$locale}", []), [
-                        'title',
+                        'name',
                         'slug',
-                        'body',
+                        'description',
                         'seo_title',
                         'seo_description',
                     ]);
@@ -169,21 +164,20 @@ class PageResource extends Resource
         ];
     }
 
-    public static function fillFormData(Page $record): array
+    public static function fillFormData(Category $record): array
     {
         return [
             'status' => $record->status,
-            'template' => $record->template,
-            'is_home' => $record->is_home,
-            'published_at' => $record->published_at,
+            'parent_id' => $record->parent_id,
+            'sort_order' => $record->sort_order,
             'translations' => collect(config('cms.supported_locales'))
                 ->mapWithKeys(function (string $locale) use ($record): array {
                     $translation = $record->translate($locale, false);
 
                     return [$locale => [
-                        'title' => $translation?->title,
+                        'name' => $translation?->name,
                         'slug' => $translation?->slug,
-                        'body' => $translation?->body,
+                        'description' => $translation?->description,
                         'seo_title' => $translation?->seo_title,
                         'seo_description' => $translation?->seo_description,
                     ]];
@@ -192,7 +186,7 @@ class PageResource extends Resource
         ];
     }
 
-    public static function persistTranslations(Page $page, array $translations): void
+    public static function persistTranslations(Category $category, array $translations): void
     {
         foreach ($translations as $locale => $translation) {
             $normalizedTranslation = array_map(
@@ -203,8 +197,8 @@ class PageResource extends Resource
             $hasContent = collect($normalizedTranslation)
                 ->contains(fn (mixed $value): bool => filled($value));
 
-            /** @var PageTranslation|null $existingTranslation */
-            $existingTranslation = $page->translate($locale, false);
+            /** @var CategoryTranslation|null $existingTranslation */
+            $existingTranslation = $category->translate($locale, false);
 
             if (! $hasContent) {
                 $existingTranslation?->delete();
@@ -212,10 +206,11 @@ class PageResource extends Resource
                 continue;
             }
 
-            $page->translateOrNew($locale)->fill($normalizedTranslation);
+            $category->translateOrNew($locale)->fill($normalizedTranslation);
+            $category->translateOrNew($locale)->path = app(CategoryPathSynchronizer::class)->pathFor($category, $locale) ?? '';
         }
 
-        $page->save();
+        $category->save();
     }
 
     /**
@@ -238,8 +233,8 @@ class PageResource extends Resource
     protected static function translationSchema(string $locale, string $fallbackLocale): array
     {
         return [
-            TextInput::make("translations.{$locale}.title")
-                ->label('Title')
+            TextInput::make("translations.{$locale}.name")
+                ->label('Name')
                 ->required($locale === $fallbackLocale)
                 ->live(onBlur: true)
                 ->afterStateUpdated(function (?string $state, Get $get, Set $set) use ($locale): void {
@@ -254,15 +249,10 @@ class PageResource extends Resource
                 ->label('Slug')
                 ->required($locale === $fallbackLocale)
                 ->alphaDash()
-                ->maxLength(255)
-                ->rules([
-                    fn (?Page $record) => Rule::unique('page_translations', 'slug')
-                        ->where(fn ($query) => $query->where('locale', $locale))
-                        ->ignore($record?->translate($locale, false)?->getKey()),
-                    fn (?Page $record): ValidRootContentSlug => new ValidRootContentSlug($locale, Page::class, $record?->getKey()),
-                ]),
-            MarkdownEditor::make("translations.{$locale}.body")
-                ->label('Body')
+                ->maxLength(255),
+            Textarea::make("translations.{$locale}.description")
+                ->label('Description')
+                ->rows(4)
                 ->columnSpanFull(),
             TextInput::make("translations.{$locale}.seo_title")
                 ->label('SEO title')
@@ -272,5 +262,20 @@ class PageResource extends Resource
                 ->rows(3)
                 ->columnSpanFull(),
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected static function parentOptions(?Category $record = null): array
+    {
+        return Category::query()
+            ->with('translations')
+            ->when($record, fn (Builder $query) => $query->whereKeyNot($record->getKey()))
+            ->get()
+            ->mapWithKeys(fn (Category $category): array => [
+                $category->getKey() => $category->nameForLocale(config('cms.fallback_locale')) ?? "Category #{$category->getKey()}",
+            ])
+            ->all();
     }
 }

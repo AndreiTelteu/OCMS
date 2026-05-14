@@ -13,9 +13,11 @@ class SchemaBuilder
     public function forPage(Page $page, ?string $locale = null): string
     {
         $locale ??= app()->getLocale();
+
         return Schema::webPage()
             ->name($page->seoTitleForLocale($locale) ?? $page->titleForLocale($locale))
             ->description($page->seoDescriptionForLocale($locale))
+            ->inLanguage($locale)
             ->url(app(LocalizedUrlGenerator::class)->page($page, $locale))
             ->toScript();
     }
@@ -23,9 +25,11 @@ class SchemaBuilder
     public function forArticle(Article $article, ?string $locale = null): string
     {
         $locale ??= app()->getLocale();
+
         return Schema::article()
             ->headline($article->seoTitleForLocale($locale) ?? $article->titleForLocale($locale))
             ->description($article->seoDescriptionForLocale($locale))
+            ->inLanguage($locale)
             ->url(app(LocalizedUrlGenerator::class)->article($article, $locale))
             ->toScript();
     }
@@ -33,9 +37,11 @@ class SchemaBuilder
     public function forCategory(Category $category, ?string $locale = null): string
     {
         $locale ??= app()->getLocale();
+
         return Schema::collectionPage()
             ->name($category->seoTitleForLocale($locale))
             ->description($category->seoDescriptionForLocale($locale))
+            ->inLanguage($locale)
             ->url(app(LocalizedUrlGenerator::class)->category($category, $locale))
             ->toScript();
     }
@@ -43,9 +49,11 @@ class SchemaBuilder
     public function forTag(Tag $tag, ?string $locale = null): string
     {
         $locale ??= app()->getLocale();
+
         return Schema::collectionPage()
             ->name($tag->seoTitleForLocale($locale))
             ->description($tag->seoDescriptionForLocale($locale))
+            ->inLanguage($locale)
             ->url(app(LocalizedUrlGenerator::class)->tag($tag, $locale))
             ->toScript();
     }

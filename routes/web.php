@@ -14,7 +14,9 @@ Route::localize(function (): void {
 });
 
 Route::translate(function (): void {
-    Route::get(Localizer::url('category/{path}'), CategoryController::class)->name('category.show');
+    Route::get(Localizer::url('category/{path}'), CategoryController::class)
+        ->where('path', '.*')
+        ->name('category.show');
     Route::get(Localizer::url('tag/{slug}'), TagController::class)->name('tag.show');
 });
 

@@ -20,6 +20,7 @@ class TagController extends Controller
         $slug = trim($slug, '/');
 
         $tag = Tag::query()
+            ->where('status', 'published')
             ->where(function ($query) use ($fallbackLocale, $locale, $slug): void {
                 $query->whereTranslation('slug', $slug, $locale);
 
