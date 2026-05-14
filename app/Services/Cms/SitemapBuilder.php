@@ -16,41 +16,34 @@ class SitemapBuilder
     public function xml(): string
     {
         $entries = [];
+        $canonicalLocale = config('cms.fallback_locale');
 
-        foreach (Page::query()->where('status', 'published')->get() as $page) {
-            foreach (config('cms.supported_locales') as $locale) {
-                $entries[] = $this->entry(
-                    $this->urls->page($page, $locale),
-                    $this->urls->alternatesForPage($page),
-                );
-            }
+        foreach (Page::query()->get()->filter(fn (Page $page): bool => $page->isPublished()) as $page) {
+            $entries[] = $this->entry(
+                $this->urls->page($page, $canonicalLocale),
+                $this->urls->alternatesForPage($page),
+            );
         }
 
-        foreach (Article::query()->where('status', 'published')->get() as $article) {
-            foreach (config('cms.supported_locales') as $locale) {
-                $entries[] = $this->entry(
-                    $this->urls->article($article, $locale),
-                    $this->urls->alternatesForArticle($article),
-                );
-            }
+        foreach (Article::query()->get()->filter(fn (Article $article): bool => $article->isPublished()) as $article) {
+            $entries[] = $this->entry(
+                $this->urls->article($article, $canonicalLocale),
+                $this->urls->alternatesForArticle($article),
+            );
         }
 
-        foreach (Category::query()->where('status', 'published')->get() as $category) {
-            foreach (config('cms.supported_locales') as $locale) {
-                $entries[] = $this->entry(
-                    $this->urls->category($category, $locale),
-                    $this->urls->alternatesForCategory($category),
-                );
-            }
+        foreach (Category::query()->get()->filter(fn (Category $category): bool => $category->isPublished()) as $category) {
+            $entries[] = $this->entry(
+                $this->urls->category($category, $canonicalLocale),
+                $this->urls->alternatesForCategory($category),
+            );
         }
 
-        foreach (Tag::query()->where('status', 'published')->get() as $tag) {
-            foreach (config('cms.supported_locales') as $locale) {
-                $entries[] = $this->entry(
-                    $this->urls->tag($tag, $locale),
-                    $this->urls->alternatesForTag($tag),
-                );
-            }
+        foreach (Tag::query()->get()->filter(fn (Tag $tag): bool => $tag->isPublished()) as $tag) {
+            $entries[] = $this->entry(
+                $this->urls->tag($tag, $canonicalLocale),
+                $this->urls->alternatesForTag($tag),
+            );
         }
 
         $body = collect($entries)->map(function (array $entry) {

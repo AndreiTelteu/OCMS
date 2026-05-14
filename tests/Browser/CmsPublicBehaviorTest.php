@@ -5,6 +5,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Tag;
+use App\Services\Cms\LocalizedUrlGenerator;
 
 it('keeps article localized routes in sync when translations change or are deleted', function (): void {
     $article = createBrowserPublishedArticle([
@@ -213,6 +214,49 @@ it('renders language metadata for category and tag pages', function (): void {
     visit(route('translated_ro.tag.show', ['slug' => 'laravel-ro'], false))
         ->assertSee('Laravel RO')
         ->assertSourceHas('"inLanguage":"ro"');
+});
+
+it('emits one sitemap url entry per content item with locale alternates', function (): void {
+    $page = createBrowserPublishedPage([
+        'en' => [
+            'title' => 'Confidence',
+            'slug' => 'artists/dorina-costras/confidence',
+            'body' => 'Page content.',
+        ],
+        'ro' => [
+            'title' => 'Încredere',
+            'slug' => 'artisti/dorina-costras/incredere',
+            'body' => 'Conținut pagină.',
+        ],
+    ]);
+
+    $article = createBrowserPublishedArticle([
+        'en' => [
+            'title' => 'Confidence',
+            'slug' => 'articles/dorina-costras/confidence',
+            'excerpt' => 'Article excerpt.',
+            'body' => 'Article body.',
+        ],
+        'ro' => [
+            'title' => 'Încredere',
+            'slug' => 'articole/dorina-costras/incredere',
+            'excerpt' => 'Rezumat articol.',
+            'body' => 'Conținut articol.',
+        ],
+    ]);
+
+    $urls = app(LocalizedUrlGenerator::class);
+    $expectedPageCanonical = $urls->page($page, config('cms.fallback_locale'));
+    $expectedArticleCanonical = $urls->article($article, config('cms.fallback_locale'));
+
+    $sitemap = visit('/sitemap.xml');
+    $source = $sitemap->script('document.documentElement.outerHTML');
+
+    expect(substr_count($source, '<loc>'))->toBe(2);
+    expect($source)->toContain($expectedPageCanonical);
+    expect($source)->toContain($expectedArticleCanonical);
+    expect($source)->toContain('hreflang="en"');
+    expect($source)->toContain('hreflang="ro"');
 });
 
 /**

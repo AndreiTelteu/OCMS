@@ -240,9 +240,13 @@ class PageResource extends Resource
         return [
             TextInput::make("translations.{$locale}.title")
                 ->label('Title')
-                ->required($locale === $fallbackLocale)
+                ->required(fn (Get $get): bool => $locale === $fallbackLocale && ! (bool) $get('is_home'))
                 ->live(onBlur: true)
                 ->afterStateUpdated(function (?string $state, Get $get, Set $set) use ($locale): void {
+                    if ($get('is_home')) {
+                        return;
+                    }
+
                     if (filled($get("translations.{$locale}.slug"))) {
                         return;
                     }
@@ -252,7 +256,7 @@ class PageResource extends Resource
                 ->maxLength(255),
             TextInput::make("translations.{$locale}.slug")
                 ->label('Slug')
-                ->required($locale === $fallbackLocale)
+                ->required(fn (Get $get): bool => $locale === $fallbackLocale && ! (bool) $get('is_home'))
                 ->alphaDash()
                 ->maxLength(255)
                 ->rules([
