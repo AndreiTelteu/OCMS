@@ -16,7 +16,7 @@ return new class extends Migration
             $table->text('value')->nullable();
             $table->timestamps();
 
-            $table->unique(['block_item_id', 'locale', 'field_key']);
+            $table->unique(['block_item_id', 'locale', 'field_key'], 'pb_item_translation_values_unique');
         });
     }
 

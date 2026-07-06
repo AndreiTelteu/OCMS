@@ -1,0 +1,46 @@
+#!/bin/bash
+
+trap "exit" 0
+
+export PUID=$(id -u)
+export PGID=$(id -g)
+
+DC="docker compose"
+
+if [ $# -eq 0 ]; then
+    $DC ps -a
+elif [ $1 == "up" ]; then
+    $DC up -d
+elif [ $1 == "down" ]; then
+    $DC down
+elif [ $1 == "restart" ]; then
+    $DC restart ${*:2}
+elif [ $1 == "recreate" ]; then
+    $DC up -d --force-recreate ${*:2}
+elif [ $1 == "build" ]; then
+    $DC up -d --force-recreate --build ${*:2}
+elif [ $1 == "tail" ]; then
+    $DC logs -f -n 100 ${*:2}
+elif [ $1 == "web" ]; then
+    if [ $# -gt 1 ]; then
+        $DC exec web sh -lc "${*:2}"
+    else
+        $DC exec web sh
+    fi
+elif [ $1 == "web-a" ]; then
+    if [ $# -gt 1 ]; then
+        $DC exec web sh -lc "php artisan ${*:2}"
+    else
+        $DC exec web sh -lc "php artisan"
+    fi
+elif [ $1 == "web-t" ]; then
+    $DC exec web php artisan tinker
+elif [ $1 == "web-c" ]; then
+    if [ $# -gt 1 ]; then
+        $DC exec web sh -lc "composer ${*:2}"
+    else
+        $DC exec web composer
+    fi
+else
+    $DC $*
+fi
