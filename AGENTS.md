@@ -17,6 +17,14 @@
 - Useful hardening checks for routing/localization work: `php artisan route:list` and `php artisan route:cache`.
 - PHP formatting command is `./vendor/bin/pint`; StyleCI uses Laravel preset with `no_unused_imports` disabled.
 
+## Docker Helper
+- `./dc` wraps `docker compose`, exports host `PUID`/`PGID`, and uses the `web` service mounted at `/app`; the app is served from the container on host port `8445`.
+- Container control: `./dc` shows `ps -a`, `./dc up` starts detached services, `./dc down` stops/removes them, `./dc restart [service]`, `./dc recreate [service]`, `./dc build [service]`, and `./dc tail [service]` follows the last 100 log lines.
+- Run shell commands in the app container with `./dc web <command>` or open a shell with `./dc web`.
+- Run Artisan in Docker as `./dc web-a <artisan args>`; normal migration workflow is `./dc up` then `./dc web-a migrate`.
+- Destructive reset workflow is `./dc web-a migrate:fresh --force`; only use it when wiping the Docker DB is intended.
+- Run Composer in Docker as `./dc web-c <composer args>`, for example `./dc web-c install` or `./dc web-c test`.
+
 ## Routing And URLs
 - Public route order in `routes/web.php` is intentional: localized home/sitemap, translated category/tag routes, then final localized catch-all `/{path?}` for root content.
 - Middleware order in `bootstrap/app.php` is intentional: `ResolveCmsLocale`, package `SetLocale`, package `RedirectLocale`, `CanonicalizeCmsLocale`, `SubstituteBindings`, then `ShareSeoContext`.
