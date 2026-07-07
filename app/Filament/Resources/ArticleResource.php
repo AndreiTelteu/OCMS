@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Rules\ValidRootContentSlug;
 use Filament\Actions;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\MarkdownEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -61,9 +62,11 @@ class ArticleResource extends Resource
                             ->options(static::authorOptions())
                             ->searchable()
                             ->preload(),
-                        TextInput::make('featured_image_path')
-                            ->label('Featured image path')
-                            ->maxLength(255),
+                        FileUpload::make('featured_image_path')
+                            ->label('Featured image')
+                            ->image()
+                            ->disk('public')
+                            ->directory('articles/featured-images'),
                         DateTimePicker::make('published_at'),
                         Select::make('category_ids')
                             ->label('Categories')

@@ -1,12 +1,16 @@
 <?php
 
 use App\Exceptions\RootRouteCollisionException;
+use App\Filament\Resources\ArticleResource;
 use App\Filament\Resources\PageResource;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\Cms\LocalizedUrlGenerator;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\FormsComponent;
+use Filament\Schemas\Schema;
 
 it('keeps article localized routes in sync when translations change or are deleted', function (): void {
     $article = createBrowserPublishedArticle([
@@ -165,6 +169,72 @@ it('saves a normal page from the Filament payload when a home page already owns 
         'routable_type' => Page::class,
         'routable_id' => $page->getKey(),
     ]);
+});
+
+it('uses an image upload for the article featured image path and preserves save/fill behavior', function (): void {
+    $schema = (new class extends FormsComponent
+    {
+        public function form(Schema $schema): Schema
+        {
+            return ArticleResource::form($schema);
+        }
+
+        public function render(): string
+        {
+            return '';
+        }
+    })->getSchema('form');
+
+    $featuredImageField = $schema->getFlatComponents()['featured_image_path'] ?? null;
+
+    expect($featuredImageField)->toBeInstanceOf(FileUpload::class);
+
+    $payload = [
+        'status' => 'published',
+        'author_id' => null,
+        'featured_image_path' => 'articles/featured-images/cover.jpg',
+        'published_at' => now()->subMinute(),
+        'category_ids' => [],
+        'tag_ids' => [],
+        'translations' => [
+            'en' => [
+                'title' => 'Featured article',
+                'slug' => 'featured-article',
+                'excerpt' => 'Featured excerpt.',
+                'body' => 'Featured body.',
+                'seo_title' => null,
+                'seo_description' => null,
+            ],
+            'ro' => [
+                'title' => 'Articol promovat',
+                'slug' => 'articol-promovat',
+                'excerpt' => 'Rezumat promovat.',
+                'body' => 'Continut promovat.',
+                'seo_title' => null,
+                'seo_description' => null,
+            ],
+        ],
+    ];
+
+    [
+        'attributes' => $attributes,
+        'category_ids' => $categoryIds,
+        'tag_ids' => $tagIds,
+        'translations' => $translations,
+    ] = ArticleResource::mutateFormData($payload);
+
+    $article = new Article;
+    $article->fill($attributes);
+    $article->save();
+
+    ArticleResource::persistTranslations($article, $translations);
+    ArticleResource::syncRelationships($article, $categoryIds, $tagIds);
+
+    $article = $article->fresh(['translations', 'categories', 'tags']);
+    $filledData = ArticleResource::fillFormData($article);
+
+    expect($article->featured_image_path)->toBe('articles/featured-images/cover.jpg')
+        ->and($filledData['featured_image_path'])->toBe('articles/featured-images/cover.jpg');
 });
 
 it('recalculates descendant category paths after slug and parent changes', function (): void {
