@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\RootRouteCollisionException;
+use App\Filament\Resources\PageResource;
 use App\Models\Article;
 use App\Models\Category;
 use App\Models\Page;
@@ -90,6 +91,80 @@ it('rejects root collisions between pages and articles instead of overwriting ro
         ->assertSee('About')
         ->assertSee('About page content.')
         ->assertDontSee('About article body.');
+});
+
+it('saves a normal page from the Filament payload when a home page already owns root', function (): void {
+    $home = createBrowserPublishedPage([
+        'en' => [
+            'title' => 'Home',
+            'slug' => '',
+            'body' => 'Homepage in English.',
+        ],
+        'ro' => [
+            'title' => 'Acasa',
+            'slug' => '',
+            'body' => 'Pagina principala in romana.',
+        ],
+    ], [
+        'is_home' => true,
+    ]);
+
+    $payload = [
+        'status' => 'published',
+        'template' => 'default',
+        'is_home' => false,
+        'published_at' => now()->subMinute(),
+        'translations' => [
+            'en' => [
+                'title' => 'About',
+                'slug' => 'about',
+                'body' => 'About page content.',
+                'seo_title' => null,
+                'seo_description' => null,
+            ],
+            'ro' => [
+                'title' => 'Despre',
+                'slug' => 'despre',
+                'body' => 'Continut pagina despre.',
+                'seo_title' => null,
+                'seo_description' => null,
+            ],
+        ],
+    ];
+
+    ['attributes' => $attributes, 'translations' => $translations] = PageResource::mutateFormData($payload);
+
+    $page = new Page;
+    $page->fill($attributes);
+    $page->save();
+
+    PageResource::persistTranslations($page, $translations);
+
+    $page = $page->fresh(['translations']);
+
+    expect($page->rootPathForLocale('en'))->toBe('about')
+        ->and($page->rootPathForLocale('ro'))->toBe('despre');
+
+    $this->assertDatabaseHas('localized_routes', [
+        'locale' => 'en',
+        'path' => '',
+        'routable_type' => Page::class,
+        'routable_id' => $home->getKey(),
+    ]);
+
+    $this->assertDatabaseHas('localized_routes', [
+        'locale' => 'en',
+        'path' => 'about',
+        'routable_type' => Page::class,
+        'routable_id' => $page->getKey(),
+    ]);
+
+    $this->assertDatabaseHas('localized_routes', [
+        'locale' => 'ro',
+        'path' => 'despre',
+        'routable_type' => Page::class,
+        'routable_id' => $page->getKey(),
+    ]);
 });
 
 it('recalculates descendant category paths after slug and parent changes', function (): void {

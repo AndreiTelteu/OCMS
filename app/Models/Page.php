@@ -16,6 +16,7 @@ class Page extends Model
 
     /** @use HasFactory<PageFactory> */
     use HasFactory;
+
     use HasTranslationFallbacks;
     use Translatable;
 
@@ -68,13 +69,15 @@ class Page extends Model
         return $this->translatedValue('slug', $locale);
     }
 
-    public function rootPathForLocale(?string $locale = null): string
+    public function rootPathForLocale(?string $locale = null): ?string
     {
         if ($this->is_home) {
             return '';
         }
 
-        return trim((string) $this->slugForLocale($locale), '/');
+        $path = trim((string) $this->slugForLocale($locale), '/');
+
+        return $path === '' ? null : $path;
     }
 
     public function seoTitleForLocale(?string $locale = null): ?string
