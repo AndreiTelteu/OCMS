@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "1cdf04e433c3ef6341294104b825bc9c",
+    "content-hash": "20c5de32c9de90e8d5eced590a34a6d3",
     "packages": [
         {
             "name": "astrotomic/laravel-translatable",
@@ -2399,6 +2399,80 @@
             "time": "2026-05-13T15:38:40+00:00"
         },
         {
+            "name": "laravel/mcp",
+            "version": "v0.7.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/laravel/mcp.git",
+                "reference": "08962a276357f89164f78b38407c08187ab26cfe"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/laravel/mcp/zipball/08962a276357f89164f78b38407c08187ab26cfe",
+                "reference": "08962a276357f89164f78b38407c08187ab26cfe",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "ext-mbstring": "*",
+                "illuminate/console": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/container": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/contracts": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/http": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/json-schema": "^12.41.1|^13.0",
+                "illuminate/routing": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/support": "^11.45.3|^12.41.1|^13.0",
+                "illuminate/validation": "^11.45.3|^12.41.1|^13.0",
+                "php": "^8.2",
+                "symfony/process": "^7.4.5|^8.0.5"
+            },
+            "require-dev": {
+                "laravel/pint": "^1.20",
+                "orchestra/testbench": "^9.15|^10.8|^11.0",
+                "pestphp/pest": "^3.8.5|^4.3.2",
+                "phpstan/phpstan": "^2.1.27",
+                "rector/rector": "^2.2.4"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "Mcp": "Laravel\\Mcp\\Server\\Facades\\Mcp"
+                    },
+                    "providers": [
+                        "Laravel\\Mcp\\Server\\McpServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Laravel\\Mcp\\": "src/",
+                    "Laravel\\Mcp\\Server\\": "src/Server/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Taylor Otwell",
+                    "email": "taylor@laravel.com"
+                }
+            ],
+            "description": "Rapidly build MCP servers for your Laravel applications.",
+            "homepage": "https://github.com/laravel/mcp",
+            "keywords": [
+                "laravel",
+                "mcp"
+            ],
+            "support": {
+                "issues": "https://github.com/laravel/mcp/issues",
+                "source": "https://github.com/laravel/mcp"
+            },
+            "time": "2026-05-22T11:45:29+00:00"
+        },
+        {
             "name": "laravel/prompts",
             "version": "v0.3.17",
             "source": {
@@ -3396,6 +3470,86 @@
                 }
             ],
             "time": "2026-05-01T00:46:07+00:00"
+        },
+        {
+            "name": "mattiasgeniar/filament-mcp",
+            "version": "v0.0.10",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mattiasgeniar/filament-mcp.git",
+                "reference": "5d79fd546dff01d006ee3a1faed5e3aa88d31e17"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mattiasgeniar/filament-mcp/zipball/5d79fd546dff01d006ee3a1faed5e3aa88d31e17",
+                "reference": "5d79fd546dff01d006ee3a1faed5e3aa88d31e17",
+                "shasum": ""
+            },
+            "require": {
+                "filament/filament": "^5.0",
+                "laravel/mcp": "^0.7",
+                "php": "^8.2",
+                "spatie/laravel-package-tools": "^1.15"
+            },
+            "require-dev": {
+                "larastan/larastan": "^3.0",
+                "laravel/pint": "^1.0",
+                "nunomaduro/collision": "^8.0",
+                "orchestra/testbench": "^10.0|^11.0",
+                "pestphp/pest": "^3.7|^4.0",
+                "pestphp/pest-plugin-laravel": "^3.0|^4.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Mattiasgeniar\\FilamentMcp\\FilamentMcpServiceProvider"
+                    ]
+                },
+                "branch-alias": {
+                    "dev-main": "0.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Mattiasgeniar\\FilamentMcp\\": "src/",
+                    "Mattiasgeniar\\FilamentMcp\\Database\\Factories\\": "database/factories/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Mattias Geniar",
+                    "email": "m@ttias.be",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Expose your Filament resources to AI agents over the Model Context Protocol, with per-record CRUD, token auth, and policy-aware access.",
+            "homepage": "https://github.com/mattiasgeniar/filament-mcp",
+            "keywords": [
+                "ai",
+                "filament",
+                "filament-plugin",
+                "filamentphp",
+                "laravel",
+                "mattiasgeniar",
+                "mcp",
+                "model-context-protocol"
+            ],
+            "support": {
+                "issues": "https://github.com/mattiasgeniar/filament-mcp/issues",
+                "source": "https://github.com/mattiasgeniar/filament-mcp"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/mattiasgeniar",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-07-14T18:53:54+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -13167,5 +13321,5 @@
         "php": "^8.3"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }

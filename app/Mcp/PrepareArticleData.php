@@ -1,0 +1,48 @@
+<?php
+
+namespace App\Mcp;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Mattiasgeniar\FilamentMcp\Contracts\PreparesRecordData;
+
+class PrepareArticleData implements PreparesRecordData
+{
+    public function __invoke(array $data, ?Model $record): array
+    {
+        $attributes = Arr::only($data, [
+            'status',
+            'author_id',
+            'featured_image_path',
+            'published_at',
+        ]);
+
+        $translations = collect(config('cms.supported_locales'))
+            ->mapWithKeys(function (string $locale) use ($data): array {
+                $translation = Arr::only((array) data_get($data, "translations.{$locale}", []), [
+                    'title',
+                    'slug',
+                    'excerpt',
+                    'body',
+                    'seo_title',
+                    'seo_description',
+                ]);
+
+                if (array_key_exists('slug', $translation)) {
+                    $translation['slug'] = filled($translation['slug'])
+                        ? trim((string) $translation['slug'], '/')
+                        : null;
+                }
+
+                return [$locale => $translation];
+            })
+            ->filter(fn (array $translation): bool => $translation !== [])
+            ->all();
+
+        foreach ($translations as $locale => $translation) {
+            $attributes[$locale] = $translation;
+        }
+
+        return $attributes;
+    }
+}

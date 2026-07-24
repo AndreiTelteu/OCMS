@@ -14,6 +14,7 @@ use App\Observers\CategoryObserver;
 use App\Observers\CategoryTranslationObserver;
 use App\Observers\PageObserver;
 use App\Observers\PageTranslationObserver;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +26,12 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        Gate::define(
+            'useFilamentMcp',
+            fn ($user): bool => filled(env('FILAMENT_MCP_ALLOWED_EMAIL'))
+                && $user->email === env('FILAMENT_MCP_ALLOWED_EMAIL'),
+        );
+
         Page::observe(PageObserver::class);
         PageTranslation::observe(PageTranslationObserver::class);
         Article::observe(ArticleObserver::class);
