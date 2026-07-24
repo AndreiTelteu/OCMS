@@ -34,6 +34,19 @@ class PrepareCategoryData implements PreparesRecordData
             ->all();
 
         foreach ($translations as $locale => $translation) {
+            $parentPath = null;
+
+            if (filled($attributes['parent_id'] ?? null)) {
+                $parentPath = \App\Models\Category::query()
+                    ->find($attributes['parent_id'])
+                    ?->pathForLocale($locale);
+            }
+
+            $translation['path'] = trim(implode('/', array_filter([
+                $parentPath,
+                $translation['slug'] ?? null,
+            ])), '/');
+
             $attributes[$locale] = $translation;
         }
 
